@@ -8,10 +8,7 @@ import com.docencia.tasks.adapters.out.persistence.TaskJpaEntity;
 import com.docencia.tasks.adapters.out.persistence.UserJpaEntity;
 import com.docencia.tasks.domain.model.Task;
 import com.docencia.tasks.domain.model.User;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
@@ -24,6 +21,7 @@ public interface UserMapper {
   // Domain <-> JPA
   UserJpaEntity toJpa(User user);
 
+  @Mapping(target = "password", source = "password")
   User toDomain(UserJpaEntity entity);
 
   @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
