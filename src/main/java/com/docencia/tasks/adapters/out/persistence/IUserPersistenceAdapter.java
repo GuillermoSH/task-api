@@ -9,6 +9,7 @@ public interface IUserPersistenceAdapter {
     User save(User user);
     List<User> findAll();
     Optional<User> findById(Long id);
+    Optional<User> findByUsername(String username);
     void deleteById(Long id);
     boolean existsById(Long id);
 }

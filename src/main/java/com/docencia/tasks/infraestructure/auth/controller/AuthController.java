@@ -25,6 +25,11 @@ public class AuthController {
         if (!authService.validateCredentials(req.username(), req.password())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
-        return new TokenResponse(jwtService.generateToken(req.username()));
+        try {
+            return new TokenResponse(jwtService.generateToken(req.username()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error generando token: " + e.getMessage());
+        }
     }
 }

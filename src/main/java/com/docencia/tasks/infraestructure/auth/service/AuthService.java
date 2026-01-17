@@ -16,8 +16,19 @@ public class AuthService {
     }
 
     public boolean validateCredentials(String username, String password) {
+        System.out.println("Intentando validar usuario: " + username);
+
         return userRepository.findByUsername(username)
-                .map(user -> passwordEncoder.matches(password, user.getPassword()))
-                .orElse(false);
+                .map(user -> {
+                    boolean matches = passwordEncoder.matches(password, user.getPassword());
+                    System.out.println("Usuario encontrado en BD: " + user.getUsername());
+                    System.out.println("Password en BD: " + user.getPassword());
+                    System.out.println("¿La contraseña coincide?: " + matches);
+                    return matches;
+                })
+                .orElseGet(() -> {
+                    System.out.println("Usuario NO encontrado en la base de datos.");
+                    return false;
+                });
     }
 }

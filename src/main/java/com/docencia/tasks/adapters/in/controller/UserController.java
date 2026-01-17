@@ -1,10 +1,15 @@
 package com.docencia.tasks.adapters.in.controller;
 
+import com.docencia.tasks.adapters.in.api.TaskRequest;
+import com.docencia.tasks.adapters.in.api.TaskResponse;
 import com.docencia.tasks.adapters.in.api.UserRequest;
 import com.docencia.tasks.adapters.in.api.UserResponse;
 import com.docencia.tasks.adapters.mapper.UserMapper;
 import com.docencia.tasks.adapters.out.persistence.UserJpaEntity;
 import com.docencia.tasks.adapters.out.persistence.UserRepository;
+import com.docencia.tasks.business.IUserService;
+import com.docencia.tasks.domain.model.Task;
+import com.docencia.tasks.domain.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -20,50 +25,65 @@ import java.util.List;
 @CrossOrigin
 public class UserController {
 
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;
+    private final IUserService service;
+    private final UserMapper mapper;
     private final PasswordEncoder passwordEncoder;
 
-    public UserController(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.userMapper = userMapper;
+    public UserController(IUserService service, UserMapper mapper, PasswordEncoder passwordEncoder) {
+        this.service = service;
+        this.mapper = mapper;
         this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping
     @Operation(summary = "Get all users (Admin only)")
     public List<UserResponse> getAll() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toResponse)
-                .toList();
+        return service.getAll().stream().map(mapper::toResponse).toList();
     }
 
-    @PostMapping("/register")
-    @Operation(summary = "Register a new user")
-    public ResponseEntity<UserResponse> register(@RequestBody UserRequest request) {
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+    @GetMapping("/{id}")
+    @Operation(summary = "Get user by id")
+    public ResponseEntity<UserResponse> getById(@PathVariable Long id) {
+        return service.getById(id)
+                .map(mapper::toResponse)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
-        UserJpaEntity newUser = new UserJpaEntity();
-        newUser.setUsername(request.getUsername());
-        // Importante: Encriptamos la contraseña antes de guardar
-        newUser.setPassword(passwordEncoder.encode(request.getPassword()));
-        // Si el rol no viene con ROLE_, se lo añadimos
-        String role = request.getRole().startsWith("ROLE_") ? request.getRole() : "ROLE_" + request.getRole();
-        newUser.setRole(role);
+    @GetMapping("/{username}")
+    @Operation(summary = "Get user by username")
+    public ResponseEntity<UserResponse> getById(@PathVariable String username) {
+        return service.getByUsername(username)
+                .map(mapper::toResponse)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
-        UserJpaEntity saved = userRepository.save(newUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userMapper.toResponse(saved));
+    @PostMapping
+    @Operation(summary = "Create a user")
+    public ResponseEntity<UserResponse> create(@RequestBody UserRequest request) {
+        User created = service.create(mapper.toDomain(request));
+        created.setPassword(passwordEncoder.encode(request.getPassword()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(created));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Update user (partial)")
+    public ResponseEntity<UserResponse> update(@PathVariable Long id, @RequestBody UserRequest request) {
+        User patch = new User();
+        patch.setUsername(request.getUsername());
+        patch.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        return service.update(id, patch)
+                .map(mapper::toResponse)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete user")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (userRepository.existsById(id)) {
-            userRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        boolean deleted = service.delete(id);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }

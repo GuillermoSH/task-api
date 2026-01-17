@@ -2,10 +2,12 @@ package com.docencia.tasks.adapters.out.persistence;
 
 import com.docencia.tasks.adapters.mapper.UserMapper;
 import com.docencia.tasks.domain.model.User;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 
+@Component
 public class UserPersistenceAdapter implements IUserPersistenceAdapter {
     private final UserRepository jpaRepo;
     private final UserMapper mapper;
@@ -29,6 +31,11 @@ public class UserPersistenceAdapter implements IUserPersistenceAdapter {
     @Override
     public Optional<User> findById(Long id) {
         return jpaRepo.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return jpaRepo.findByUsername(username).map(mapper::toDomain);
     }
 
     @Override

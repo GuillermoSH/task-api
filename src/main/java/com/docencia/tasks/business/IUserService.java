@@ -9,6 +9,7 @@ public interface IUserService {
     User create(User user);
     List<User> getAll();
     Optional<User> getById(Long id);
+    Optional<User> getByUsername(String username);
     Optional<User> update(Long id, User patch);
     boolean delete(Long id);
 }

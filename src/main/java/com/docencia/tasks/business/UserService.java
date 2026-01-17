@@ -33,6 +33,11 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public Optional<User> getByUsername(String username) {
+        return repo.findByUsername(username);
+    }
+
+    @Override
     public Optional<User> update(Long id, User patch) {
         return repo.findById(id).map(existing -> {
             if (patch.getUsername() != null) existing.setUsername(patch.getUsername());
