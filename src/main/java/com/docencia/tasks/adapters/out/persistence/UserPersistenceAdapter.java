@@ -1,0 +1,43 @@
+package com.docencia.tasks.adapters.out.persistence;
+
+import com.docencia.tasks.adapters.mapper.UserMapper;
+import com.docencia.tasks.domain.model.User;
+
+import java.util.List;
+import java.util.Optional;
+
+public class UserPersistenceAdapter implements IUserPersistenceAdapter {
+    private final UserRepository jpaRepo;
+    private final UserMapper mapper;
+
+    public UserPersistenceAdapter(UserRepository jpaRepo, UserMapper mapper) {
+        this.jpaRepo = jpaRepo;
+        this.mapper = mapper;
+    }
+
+    @Override
+    public User save(User user) {
+        UserJpaEntity saved = jpaRepo.save(mapper.toJpa(user));
+        return mapper.toDomain(saved);
+    }
+
+    @Override
+    public List<User> findAll() {
+        return jpaRepo.findAll().stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public Optional<User> findById(Long id) {
+        return jpaRepo.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        jpaRepo.deleteById(id);
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        return jpaRepo.existsById(id);
+    }
+}
