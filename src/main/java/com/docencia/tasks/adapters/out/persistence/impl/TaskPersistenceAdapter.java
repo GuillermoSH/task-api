@@ -1,5 +1,8 @@
-package com.docencia.tasks.adapters.out.persistence;
+package com.docencia.tasks.adapters.out.persistence.impl;
 
+import com.docencia.tasks.adapters.out.persistence.ITaskPersistenceAdapter;
+import com.docencia.tasks.adapters.out.persistence.TaskJpaEntity;
+import com.docencia.tasks.adapters.out.persistence.TaskRepository;
 import org.springframework.stereotype.Component;
 
 import com.docencia.tasks.adapters.mapper.TaskMapper;

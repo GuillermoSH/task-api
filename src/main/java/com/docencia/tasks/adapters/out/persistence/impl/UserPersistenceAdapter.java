@@ -1,6 +1,9 @@
-package com.docencia.tasks.adapters.out.persistence;
+package com.docencia.tasks.adapters.out.persistence.impl;
 
 import com.docencia.tasks.adapters.mapper.UserMapper;
+import com.docencia.tasks.adapters.out.persistence.IUserPersistenceAdapter;
+import com.docencia.tasks.adapters.out.persistence.UserJpaEntity;
+import com.docencia.tasks.adapters.out.persistence.UserRepository;
 import com.docencia.tasks.domain.model.User;
 import org.springframework.stereotype.Component;
 

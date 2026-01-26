@@ -1,75 +1,143 @@
 package com.docencia.tasks.adapters.in.controller;
 
-import org.junit.jupiter.api.Test;
-
 import com.docencia.tasks.adapters.in.api.TaskRequest;
 import com.docencia.tasks.adapters.in.api.TaskResponse;
-import com.docencia.tasks.adapters.in.controller.TaskController;
 import com.docencia.tasks.adapters.mapper.TaskMapper;
 import com.docencia.tasks.business.ITaskService;
 import com.docencia.tasks.domain.model.Task;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class TaskControllerTest {
 
+  private TaskController taskController;
+
+  @Mock
+  private ITaskService service;
+
+  @Mock
+  private TaskMapper mapper;
+
+  @BeforeEach
+  void setUp() {
+    // Instanciación manual para evitar problemas de ApplicationContext
+    taskController = new TaskController(service, mapper);
+  }
+
   @Test
-  void getAll_returnsMappedResponses() {
-    ITaskService service = mock(ITaskService.class);
-    TaskMapper mapper = mock(TaskMapper.class);
-    TaskController controller = new TaskController(service, mapper);
+  void getAll_ShouldReturnMappedList() {
+    Task task = new Task();
+    TaskResponse response = new TaskResponse();
 
-    Task task = new Task(1L, "a", "b", false);
     when(service.getAll()).thenReturn(List.of(task));
-    when(mapper.toResponse(task)).thenReturn(new TaskResponse(1L, "a", "b", false));
+    when(mapper.toResponse(task)).thenReturn(response);
 
-    List<TaskResponse> res = controller.getAll();
+    List<TaskResponse> result = taskController.getAll();
 
-    assertEquals(1, res.size());
-    assertEquals(1L, res.get(0).getId());
+    assertNotNull(result);
+    assertEquals(1, result.size());
     verify(service).getAll();
     verify(mapper).toResponse(task);
   }
 
   @Test
-  void getById_returns404_whenNotFound() {
-    ITaskService service = mock(ITaskService.class);
-    TaskMapper mapper = mock(TaskMapper.class);
-    TaskController controller = new TaskController(service, mapper);
+  void getById_WhenExists_ShouldReturnOk() {
+    Task task = new Task();
+    TaskResponse response = new TaskResponse();
 
-    when(service.getById(10L)).thenReturn(Optional.empty());
+    when(service.getById(1L)).thenReturn(Optional.of(task));
+    when(mapper.toResponse(task)).thenReturn(response);
 
-    var resp = controller.getById(10L);
+    ResponseEntity<TaskResponse> result = taskController.getById(1L);
 
-    assertEquals(404, resp.getStatusCode().value());
+    assertEquals(HttpStatus.OK, result.getStatusCode());
+    assertNotNull(result.getBody());
   }
 
   @Test
-  void create_returns201_andBody() {
-    ITaskService service = mock(ITaskService.class);
-    TaskMapper mapper = mock(TaskMapper.class);
-    TaskController controller = new TaskController(service, mapper);
+  void getById_WhenNotExists_ShouldReturnNotFound() {
+    when(service.getById(1L)).thenReturn(Optional.empty());
 
-    TaskRequest req = new TaskRequest();
-    req.setTitle("t");
-    req.setDescription("d");
-    req.setCompleted(false);
+    ResponseEntity<TaskResponse> result = taskController.getById(1L);
 
-    Task domain = new Task(null, "t", "d", false);
-    Task saved = new Task(1L, "t", "d", false);
+    assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+    assertNull(result.getBody());
+  }
 
-    when(mapper.toDomain(req)).thenReturn(domain);
-    when(service.create(domain)).thenReturn(saved);
-    when(mapper.toResponse(saved)).thenReturn(new TaskResponse(1L, "t", "d", false));
+  @Test
+  void create_ShouldReturnCreatedStatus() {
+    TaskRequest request = new TaskRequest();
+    Task taskDomain = new Task();
+    Task savedTask = new Task();
+    TaskResponse response = new TaskResponse();
 
-    var resp = controller.create(req);
+    when(mapper.toDomain(request)).thenReturn(taskDomain);
+    when(service.create(taskDomain)).thenReturn(savedTask);
+    when(mapper.toResponse(savedTask)).thenReturn(response);
 
-    assertEquals(201, resp.getStatusCode().value());
-    assertNotNull(resp.getBody());
-    assertEquals(1L, resp.getBody().getId());
+    ResponseEntity<TaskResponse> result = taskController.create(request);
+
+    assertEquals(HttpStatus.CREATED, result.getStatusCode());
+    assertNotNull(result.getBody());
+  }
+
+  @Test
+  void update_WhenExists_ShouldReturnOk() {
+    TaskRequest request = new TaskRequest();
+    request.setTitle("New Title");
+    request.setCompleted(true);
+
+    Task updatedTask = new Task();
+    TaskResponse response = new TaskResponse();
+
+    when(service.update(eq(1L), any(Task.class))).thenReturn(Optional.of(updatedTask));
+    when(mapper.toResponse(updatedTask)).thenReturn(response);
+
+    ResponseEntity<TaskResponse> result = taskController.update(1L, request);
+
+    assertEquals(HttpStatus.OK, result.getStatusCode());
+    assertNotNull(result.getBody());
+  }
+
+  @Test
+  void update_WhenNotExists_ShouldReturnNotFound() {
+    TaskRequest request = new TaskRequest();
+    when(service.update(eq(1L), any(Task.class))).thenReturn(Optional.empty());
+
+    ResponseEntity<TaskResponse> result = taskController.update(1L, request);
+
+    assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+  }
+
+  @Test
+  void delete_WhenSuccess_ShouldReturnNoContent() {
+    when(service.delete(1L)).thenReturn(true);
+
+    ResponseEntity<Void> result = taskController.delete(1L);
+
+    assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
+  }
+
+  @Test
+  void delete_WhenFail_ShouldReturnNotFound() {
+    when(service.delete(1L)).thenReturn(false);
+
+    ResponseEntity<Void> result = taskController.delete(1L);
+
+    assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
   }
 }

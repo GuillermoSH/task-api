@@ -50,7 +50,7 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/{username}")
+    @GetMapping("/username/{username}")
     @Operation(summary = "Get user by username")
     public ResponseEntity<UserResponse> getById(@PathVariable String username) {
         return service.getByUsername(username)
